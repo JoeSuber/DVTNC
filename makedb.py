@@ -15,79 +15,50 @@
 
 """
 
-import sqlite3 as sql
-
-columns = ["MEID","OEM","SKU","IMEI","MODEL","HW_TYPE","IN","OUT",
-           "ARCHIVED","TesterName","DVTadmin","SERIAL NUMBER","MSL/SPC", "Comment"]
-
-
-__types__ = {"<type 'list'>": 'json',
-             "<type 'unicode'>": 'TEXT',
-             "<type 'str'>": 'TEXT',
-             "<type 'float'>": 'REAL',
-             "<type 'int'>": 'INTEGER',
-             "<type 'dict'>": 'json',
-             "<type 'bool'>": 'TEXT',
-             "<type 'buffer'>": 'BLOB'}
-
-dbfn = "inventory.sqlite"
-import os
-import path
-import json
 import sqlite3
-import requests
-import grequests
-from collections import Counter
-import time
 import sys
-reload(sys).setdefaultencoding("utf8")
+import os
+import json
+
+inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
+                     "OEM":"TEXT",
+                     "SKU":"TEXT",
+                     "IMEI":"TEXT",
+                     "MODEL":"TEXT",
+                     "HW_TYPE":"TEXT",
+                     "IN":"TEXT",
+                     "OUT":"TEXT",
+                     "ARCHIVED":"TEXT",
+                     "TesterName":"TEXT",
+                     "DVTadmin":"TEXT",
+                     "SERIAL NUMBER":"TEXT",
+                     "MSL/SPC":"TEXT",
+                     "Comment":"TEXT"}
 
 
-DEBUG = True
-__author__ = 'suber1'
+people_columns = {"Badge ID":"INTEGER PRIMARY KEY",
+                  "Name":"TEXT",
+                  "Department":"TEXT"}
+
+db_tables = ["INVENTORY", "PEOPLE"]
+db_columns = [inventory_columns, people_columns]
+__dbfn__ = "DVTCinventory"
 __sqlext__ = '.sqlite'
-__sqlsets__ = os.getcwd() + os.sep + 'mtg_sets' + __sqlext__
-__sqlcards__ = os.getcwd() + os.sep + 'mtg_cards' + __sqlext__
-__sqlfiles__ = [__sqlsets__, __sqlcards__]
-__mtgpics__ = os.getcwd() + os.sep + 'pics'
-__needs__ = os.getcwd() + os.sep + 'needs_pic_links.json'
-__jsonsets__ = 'http://mtgjson.com/json/SetCodes.json'
-__jsonupdate__ = 'http://mtgjson.com/json/changelog.json'
-__one_set__ = 'http://mtgjson.com/json/{}.json'
-__req_limit__ = 21          # can the web server handle getting pounded by this many?
-__test_quant__ = 0          # set to zero for normal full run
-__max_errors__ = 0          # set positive to explore new import data
-__last_update__ = os.getcwd() + os.sep + 'last_update.json'
-__set_hdr_excluded__ = [u'cards', u'booster']
-__cards_hdr_excluded__ = [u'booster', u'foreignNames']
-__newness__ = [u"newSetFiles", u"updatedSetFiles"]
-__sets_key__ = u'code'
-__sets_t__ = 'set_infos'
-__cards_key__ = u'id'
-__cards_t__ = 'cards'
-__cards_dk__ = u'cards'
-__types__ = {"<type 'list'>": 'json',
-             "<type 'unicode'>": 'TEXT',
-             "<type 'str'>": 'TEXT',
-             "<type 'float'>": 'REAL',
-             "<type 'int'>": 'INTEGER',
-             "<type 'dict'>": 'json',
-             "<type 'bool'>": 'TEXT',
-             "<type 'buffer'>": 'BLOB'}
-
+__sql_inventory_fn__ = os.getcwd() + os.sep + __dbfn__ + __sqlext__
+__sqlfiles__ = [__sql_inventory_fn__]
+__max_errors__ = 1
 
 class DBMagic (object):
     """
-    DBcolumns = {db_tablename: '''CREATE TABLE db_tablename (column_name1 data_type PRIMARY KEY?,
-                                column_name2 data_type, )''', ...}
-    user: get the columns from the json entry for a card, or make up your own
+    DBtables = [list of tables that are required]
+    
     """
-    def __init__(self, DBfn=None, DBcolumns=None, DB_DEBUG=False):
+    def __init__(self, DBfn=None, DBtables=None, DB_DEBUG=False):
         self.DB_DEBUG = DB_DEBUG
         self.DBfn = DBfn
-        self.DBcolumns = DBcolumns
+        self.DBtables = DBtables
         if self.DBfn is None:
-            self.DBfn = os.path.join(os.path.expanduser('~'), 'Desktop', "MagicDB", __sqlext__)
+            self.DBfn = os.path.join(os.path.expanduser('~'), 'Desktop', __dbfn__, __sqlext__)
             print("WARNING, creating/using a default database: {}".format(self.DBfn))
         if not os.path.isdir(os.path.dirname(self.DBfn)):
             os.makedirs(os.path.dirname(self.DBfn))
@@ -100,9 +71,9 @@ class DBMagic (object):
         self.cur = self.con.cursor()
         self.newDB = False
         # check that tables exist. if not, make them
-        for t, v in self.DBcolumns.viewitems():
+        for t in self.DBtables:
             if not self.cur.execute('''PRAGMA table_info ('{}')'''.format(t)).fetchall():
-                self.cur.execute(v)
+                self.cur.execute("CREATE TABLE {}".format(t))
                 self.con.commit()
                 print("Created new table: {}".format(t))
                 self.newDB = True
@@ -180,14 +151,10 @@ class DBMagic (object):
         self.con.commit()
         return n, error_count
 
-
-createstr = '''CREATE TABLE {} ({} TEXT PRIMARY KEY)'''
-set_db = DBMagic(DBfn=__sqlsets__,
-                 DBcolumns={__sets_t__: createstr.format(__sets_t__, __sets_key__)},
-                 DB_DEBUG=DEBUG)
-card_db = DBMagic(DBfn=__sqlcards__,
-                  DBcolumns={__cards_t__: createstr.format(__cards_t__, __cards_key__)},
-                  DB_DEBUG=DEBUG)
 if __name__ == "__main__":
-    pass
+    DEBUG = True
+    dvtc_db = DBMagic(DBfn=__sql_inventory_fn__, DBtables=db_tables, DB_DEBUG=DEBUG)
+    for table, columns in zip(db_tables, db_columns):
+        dvtc_db.add_columns(table, columns)
+        print(dvtc_db.show_columns(table))
 
