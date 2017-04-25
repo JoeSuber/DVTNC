@@ -22,6 +22,7 @@ import sqlite3
 import sys
 import os
 import json
+from easygui
 
 inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
                      "OEM":"TEXT",
@@ -36,7 +37,8 @@ inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
                      "DVTadmin":"TEXT",
                      "SERIAL_NUMBER":"TEXT",
                      "MSLSPC":"TEXT",
-                     "Comment":"TEXT"}
+                     "Comment":"TEXT",
+                     "fakenewthing":"TEXT"}
 
 
 people_columns = {"BadgeID":"INTEGER PRIMARY KEY",
@@ -169,4 +171,5 @@ if __name__ == "__main__":
     for table, columns in zip(db_tables, db_columns):
         dvtc_db.add_columns(table, columns)
         print(dvtc_db.show_columns(table))
+
 
