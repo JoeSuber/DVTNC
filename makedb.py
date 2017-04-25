@@ -1,18 +1,21 @@
 """
-● MEID ○ Mobile Equipment Identifier
+MEID Mobile Equipment Identifier
 
-● HW_TYPE ○ Hardware Type - Smartphone, Feature phone, Tablet, Module, etc.
+HW_TYPE Hardware Type - Smartphone, Feature phone, Tablet, Module, etc.
 
-● SKU ○ Network that the device was designed for (Sprint, Boost, etc.)
+SKU Network that the device was designed for (Sprint, Boost, etc.)
 
-● STATUS ○ IN -- checked into inventory ○ OUT -- checked out of inventory for testing ○ ARCHIVED - the device is no longer at DVT&C
+STATUS
+IN -- checked into inventory 
+OUT -- checked out of inventory for testing 
+ARCHIVED - the device is no longer at DVT&C
 
-○ TesterName - name of the person who has the device ○ DVT Admin - the default owner when the device is still in inventory
+TesterName - name of the person who has the device 
+DVT Admin - the default owner when the device is still in inventory
 
-● SERIAL NUMBER
+SERIAL NUMBER
 
-● MSL/SPC	Serial No. 	MSL	Date Received	Date Returned	Barcode	Last Location with Date (mm/dd/yy)	Comment
-
+MSL/SPC	Serial No. 	MSL	Date Received	Date Returned	Barcode	Last Location with Date (mm/dd/yy)	Comment
 """
 
 import sqlite3
@@ -26,17 +29,17 @@ inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
                      "IMEI":"TEXT",
                      "MODEL":"TEXT",
                      "HW_TYPE":"TEXT",
-                     "IN":"TEXT",
-                     "OUT":"TEXT",
+                     "IN_DATE":"TEXT",
+                     "OUT_DATE":"TEXT",
                      "ARCHIVED":"TEXT",
                      "TesterName":"TEXT",
                      "DVTadmin":"TEXT",
-                     "SERIAL NUMBER":"TEXT",
-                     "MSL/SPC":"TEXT",
+                     "SERIAL_NUMBER":"TEXT",
+                     "MSLSPC":"TEXT",
                      "Comment":"TEXT"}
 
 
-people_columns = {"Badge ID":"INTEGER PRIMARY KEY",
+people_columns = {"BadgeID":"INTEGER PRIMARY KEY",
                   "Name":"TEXT",
                   "Department":"TEXT"}
 
@@ -53,10 +56,13 @@ class DBMagic (object):
     DBtables = [list of tables that are required]
     
     """
-    def __init__(self, DBfn=None, DBtables=None, DB_DEBUG=False):
+    def __init__(self, DBfn=None, DBtables=None, DBcolumns=None, DB_DEBUG=False):
         self.DB_DEBUG = DB_DEBUG
         self.DBfn = DBfn
         self.DBtables = DBtables
+        self.DBcolumns = DBcolumns
+        if DEBUG:
+            print("path to database file is: {}".format(self.DBfn))
         if self.DBfn is None:
             self.DBfn = os.path.join(os.path.expanduser('~'), 'Desktop', __dbfn__, __sqlext__)
             print("WARNING, creating/using a default database: {}".format(self.DBfn))
@@ -71,9 +77,13 @@ class DBMagic (object):
         self.cur = self.con.cursor()
         self.newDB = False
         # check that tables exist. if not, make them
-        for t in self.DBtables:
+        for t, columns in zip(self.DBtables, self.DBcolumns):
+            primary_key, primary_type = "DEFAULT KEY", "INTEGER PRIMARY KEY"
+            for k, v in columns.viewitems():
+                if "PRIMARY KEY" in v:
+                    primary_key, primary_type = k, v
             if not self.cur.execute('''PRAGMA table_info ('{}')'''.format(t)).fetchall():
-                self.cur.execute("CREATE TABLE {}".format(t))
+                self.cur.execute('''CREATE TABLE {} ({} {})'''.format(t, primary_key, primary_type))
                 self.con.commit()
                 print("Created new table: {}".format(t))
                 self.newDB = True
@@ -97,9 +107,10 @@ class DBMagic (object):
         present_columns = self.show_columns(tableup)
         for newcol, sql_dtype in column_map.viewitems():
             if newcol not in present_columns:
-                self.cur.execute('''ALTER TABLE {} ADD {} {}'''.format(tableup, newcol, sql_dtype))
                 if self.DB_DEBUG:
                     print("added column: '{}' of type: '{}' to table: {}".format(newcol, sql_dtype, tableup))
+                self.cur.execute('''ALTER TABLE {} ADD {} {}'''.format(tableup, newcol, sql_dtype))
+
         self.con.commit()
 
     def add_data(self, data, tbl, key_column=None):
@@ -153,7 +164,8 @@ class DBMagic (object):
 
 if __name__ == "__main__":
     DEBUG = True
-    dvtc_db = DBMagic(DBfn=__sql_inventory_fn__, DBtables=db_tables, DB_DEBUG=DEBUG)
+    dvtc_db = DBMagic(DBfn=__sql_inventory_fn__, DBtables=db_tables, DBcolumns=db_columns, DB_DEBUG=DEBUG)
+    print dvtc_db.DBfn
     for table, columns in zip(db_tables, db_columns):
         dvtc_db.add_columns(table, columns)
         print(dvtc_db.show_columns(table))
