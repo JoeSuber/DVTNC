@@ -22,7 +22,7 @@ import sqlite3
 import sys
 import os
 import json
-from easygui
+import easygui as gui
 
 inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
                      "OEM":"TEXT",
@@ -81,7 +81,7 @@ class DBMagic (object):
         # check that tables exist. if not, make them
         for t, columns in zip(self.DBtables, self.DBcolumns):
             primary_key, primary_type = "DEFAULT KEY", "INTEGER PRIMARY KEY"
-            for k, v in columns.viewitems():
+            for k, v in columns.items():
                 if "PRIMARY KEY" in v:
                     primary_key, primary_type = k, v
             if not self.cur.execute('''PRAGMA table_info ('{}')'''.format(t)).fetchall():
@@ -107,7 +107,7 @@ class DBMagic (object):
                           eg  {'column-name': 'INTEGER', ...}
         """
         present_columns = self.show_columns(tableup)
-        for newcol, sql_dtype in column_map.viewitems():
+        for newcol, sql_dtype in column_map.items():
             if newcol not in present_columns:
                 if self.DB_DEBUG:
                     print("added column: '{}' of type: '{}' to table: {}".format(newcol, sql_dtype, tableup))
@@ -164,12 +164,49 @@ class DBMagic (object):
         self.con.commit()
         return n, error_count
 
+
+class Menus(object):
+    '''db is an instance of the database access class'''
+    def __init__(self, db=None):
+        if not db:
+            print("Warning! Menus have no database connection!")
+        self.db = db
+
+    def add_new_person(self, badge):
+        column_names = self.db.show_columns("PEOPLE")
+        new_info = gui.multenterbox(msg="Attach a Person to Badge Number: {}".format(badge),
+                                    title="New Badge Entry",
+                                    fields=column_names,
+                                    values=[badge])
+        self.db.cur.execute("INSERT INTO PEOPLE {} VALUES {}".format(tuple(column_names), tuple(new_info)))
+        return new_info
+
+    def show_person(self, badge):
+        pass
+        #gui.multenterbox()
+
 if __name__ == "__main__":
     DEBUG = True
     dvtc_db = DBMagic(DBfn=__sql_inventory_fn__, DBtables=db_tables, DBcolumns=db_columns, DB_DEBUG=DEBUG)
-    print dvtc_db.DBfn
+    menus = Menus(db=dvtc_db)
+
     for table, columns in zip(db_tables, db_columns):
         dvtc_db.add_columns(table, columns)
-        print(dvtc_db.show_columns(table))
+        if DEBUG:
+            print("TABLE: {} has columns: {}".format(table, dvtc_db.show_columns(table)))
 
+    looping = True
+    while looping:
+        badge = gui.integerbox(msg="enter Badge barcode:",
+                               title="INVENTORY ACCESS and CHECKOUT APP",
+                               upperbound=99999999999999999999)
+        print(badge)
 
+        profile = dvtc_db.cur.execute("SELECT * FROM PEOPLE WHERE BadgeID=?", (badge,)).fetchall()
+        if not profile: # add new person
+            profile = menus.add_new_person(badge)
+
+        if badge==0 or badge=="":
+            looping = 0
+
+    print(badge)
