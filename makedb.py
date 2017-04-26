@@ -19,10 +19,9 @@ MSL/SPC	Serial No. 	MSL	Date Received	Date Returned	Barcode	Last Location with D
 """
 
 import sqlite3
-import sys
 import os
 import json
-import easygui as gui
+from flask import Flask, render_template, request
 
 inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
                      "OEM":"TEXT",
@@ -98,6 +97,14 @@ class DBMagic (object):
     def show_columns(self, tablename):
         return [t[1] for t in self.cur.execute('''PRAGMA table_info ('{}')'''.format(tablename)).fetchall()]
 
+    def find_person(self, badge):
+        """ return python dict of person characteristics from db given a badge """
+        return self.cur.execute("SELECT * FROM PEOPLE WHERE BadgeID=?", (badge,)).fetchall()
+
+    def find_device(self, meid):
+        """ return python dict of device characteristics from db given a meid """
+        return self.cur.execute("SELECT * FROM INVENTORY WHERE MEID=?", (meid,)).fetchall()
+
     def add_columns(self, tableup, column_map):
         """
         Parameters
@@ -143,7 +150,7 @@ class DBMagic (object):
             return c + "=(?)"
 
         for n, line in enumerate(data):
-            line_item = {k: v for k, v in line.viewitems() if k in approved_columns}
+            line_item = {k: v for k, v in line.items() if k in approved_columns}
             SQL1 = '''INSERT OR IGNORE INTO {}({}) VALUES({})'''.format(str(tbl), ', '.join(line_item.keys()),
                                                                         ':' + ', :'.join(line_item.keys()))
             SQL2 = '''UPDATE {} SET {} WHERE changes()=0 and {}=("{}")'''\
@@ -164,49 +171,18 @@ class DBMagic (object):
         self.con.commit()
         return n, error_count
 
+""" initialize on import """
+DEBUG = True
+dvtc_db = DBMagic(DBfn=__sql_inventory_fn__, DBtables=db_tables, DBcolumns=db_columns, DB_DEBUG=DEBUG)
 
-class Menus(object):
-    '''db is an instance of the database access class'''
-    def __init__(self, db=None):
-        if not db:
-            print("Warning! Menus have no database connection!")
-        self.db = db
+for table, columns in zip(db_tables, db_columns):
+    dvtc_db.add_columns(table, columns)
+    if DEBUG:
+        print("TABLE: {} has columns: {}".format(table, dvtc_db.show_columns(table)))
 
-    def add_new_person(self, badge):
-        column_names = self.db.show_columns("PEOPLE")
-        new_info = gui.multenterbox(msg="Attach a Person to Badge Number: {}".format(badge),
-                                    title="New Badge Entry",
-                                    fields=column_names,
-                                    values=[badge])
-        self.db.cur.execute("INSERT INTO PEOPLE {} VALUES {}".format(tuple(column_names), tuple(new_info)))
-        return new_info
-
-    def show_person(self, badge):
-        pass
-        #gui.multenterbox()
 
 if __name__ == "__main__":
-    DEBUG = True
-    dvtc_db = DBMagic(DBfn=__sql_inventory_fn__, DBtables=db_tables, DBcolumns=db_columns, DB_DEBUG=DEBUG)
-    menus = Menus(db=dvtc_db)
+    pass
+    # profile = dvtc_db.cur.execute("SELECT * FROM PEOPLE WHERE BadgeID=?", (badge,)).fetchall()
 
-    for table, columns in zip(db_tables, db_columns):
-        dvtc_db.add_columns(table, columns)
-        if DEBUG:
-            print("TABLE: {} has columns: {}".format(table, dvtc_db.show_columns(table)))
 
-    looping = True
-    while looping:
-        badge = gui.integerbox(msg="enter Badge barcode:",
-                               title="INVENTORY ACCESS and CHECKOUT APP",
-                               upperbound=99999999999999999999)
-        print(badge)
-
-        profile = dvtc_db.cur.execute("SELECT * FROM PEOPLE WHERE BadgeID=?", (badge,)).fetchall()
-        if not profile: # add new person
-            profile = menus.add_new_person(badge)
-
-        if badge==0 or badge=="":
-            looping = 0
-
-    print(badge)
