@@ -7,7 +7,10 @@
 </head>
 <body>
 <h1>
-    {{ person }}
+    {% for p in person %}
+    <h1> {{ p }} </h1>
+    {% end for %}
+
 </h1>
 </body>
 </html>

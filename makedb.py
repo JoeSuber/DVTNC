@@ -21,7 +21,7 @@ MSL/SPC	Serial No. 	MSL	Date Received	Date Returned	Barcode	Last Location with D
 import sqlite3
 import os
 import json
-from flask import Flask, render_template, request
+
 
 inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
                      "OEM":"TEXT",
@@ -175,6 +175,7 @@ class DBMagic (object):
 DEBUG = True
 dvtc_db = DBMagic(DBfn=__sql_inventory_fn__, DBtables=db_tables, DBcolumns=db_columns, DB_DEBUG=DEBUG)
 
+""" add any new columns in the tables """
 for table, columns in zip(db_tables, db_columns):
     dvtc_db.add_columns(table, columns)
     if DEBUG:
@@ -182,7 +183,7 @@ for table, columns in zip(db_tables, db_columns):
 
 
 if __name__ == "__main__":
-    pass
+    print("makedb.py should not be run directly")
     # profile = dvtc_db.cur.execute("SELECT * FROM PEOPLE WHERE BadgeID=?", (badge,)).fetchall()
 
 
