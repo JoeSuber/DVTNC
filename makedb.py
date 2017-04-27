@@ -93,6 +93,10 @@ class DBMagic (object):
         """ return python dict of device characteristics from db given a meid """
         return self.cur.execute("SELECT * FROM INVENTORY WHERE MEID=?", (meid,)).fetchall()
 
+    def owner_of_device(self, person, meid):
+        devices_owned = self.cur.execute("SELECT * FROM INVENTORY WHERE DVTadmin = ?", (person['name'],))
+        return True if meid in devices_owned else False
+
     def add_columns(self, tableup, column_map):
         """
         Parameters
