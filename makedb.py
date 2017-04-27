@@ -1,27 +1,15 @@
 """
-MEID Mobile Equipment Identifier
+Provides sqlite3 database to the inventory app.
 
-HW_TYPE Hardware Type - Smartphone, Feature phone, Tablet, Module, etc.
+Changes to tables can be made here without harming existing data.
 
-SKU Network that the device was designed for (Sprint, Boost, etc.)
-
-STATUS
-IN -- checked into inventory 
-OUT -- checked out of inventory for testing 
-ARCHIVED - the device is no longer at DVT&C
-
-TesterName - name of the person who has the device 
-DVT Admin - the default owner when the device is still in inventory
-
-SERIAL NUMBER
-
-MSL/SPC	Serial No. 	MSL	Date Received	Date Returned	Barcode	Last Location with Date (mm/dd/yy)	Comment
+ToDo: inventory import from the diverse spreadsheets. This is facilitated by
+    the json-based UPSERT-equivilant DBMagic.add_data(...)
 """
 
 import sqlite3
 import os
 import json
-
 
 inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
                      "OEM":"TEXT",
@@ -45,6 +33,7 @@ people_columns = {"BadgeID":"INTEGER PRIMARY KEY",
                   "Department":"TEXT"}
 
 db_tables = ["INVENTORY", "PEOPLE"]
+
 db_columns = [inventory_columns, people_columns]
 __dbfn__ = "DVTCinventory"
 __sqlext__ = '.sqlite'
@@ -55,7 +44,6 @@ __max_errors__ = 1
 class DBMagic (object):
     """
     DBtables = [list of tables that are required]
-    
     """
     def __init__(self, DBfn=None, DBtables=None, DBcolumns=None, DB_DEBUG=False):
         self.DB_DEBUG = DB_DEBUG
@@ -184,6 +172,7 @@ for table, columns in zip(db_tables, db_columns):
 
 if __name__ == "__main__":
     print("makedb.py should not be run directly")
+    exit(0)
     # profile = dvtc_db.cur.execute("SELECT * FROM PEOPLE WHERE BadgeID=?", (badge,)).fetchall()
 
 

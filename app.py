@@ -4,42 +4,49 @@ from werkzeug.security import generate_password_hash, check_password_hash
 mydb = makedb.dvtc_db
 app = Flask(__name__)
 
-# MySQL configurations
-app.config['MYSQL_DATABASE_USER'] = 'jay'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'jay'
-app.config['MYSQL_DATABASE_DB'] = 'BucketList'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-
-
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def main():
+    if request.method == 'POST':
+        _badge = request.form['inputName']
+        if mydb.find_person(_badge):
+            render_template()
+
     return render_template('index.html')
 
+@app.route('/login', methods=['POST', 'GET'])
+def login():
+    error = None
+    if request.method == 'POST':
+        if valid_login(request.form['username'],
+                       request.form['password']):
+            return log_the_user_in(request.form['username'])
+        else:
+            error = 'Invalid username/password'
+    # the code below is executed if the request method
+    # was GET or the credentials were invalid
+    return render_template('login.html', error=error)
 @app.route('/showSignUp')
 def showSignUp():
     return render_template('signup.html')
 
-
+"""
 @app.route('/signUp',methods=['POST','GET'])
 def signUp():
     try:
-        _name = request.form['inputName']
-        _email = request.form['inputEmail']
-        _password = request.form['inputPassword']
+        _badge = request.form['inputName']
 
+        _username = request.form['inputEmail']
+        _department = request.form['inputPassword']
         # validate the received values
-        if _name and _email and _password:
+        if _badge:
             
-            # All Good, let's call MySQL
-            
-            conn = mydb.con
-            cursor = mydb.cur
-            _hashed_password = generate_password_hash(_password)
-            cursor.callproc('sp_createUser',(_name,_email,_hashed_password))
-            data = cursor.fetchall()
+            # do some db
+            _hashed_name = generate_password_hash(_badge)
+            data = mydb.checkname(_badge)
+            # data = cursor.fetchall()
 
             if len(data) is 0:
-                conn.commit()
+                # do stuff here to add data to database
                 return json.dumps({'message':'User created successfully !'})
             else:
                 return json.dumps({'error':str(data[0])})
@@ -51,6 +58,6 @@ def signUp():
     finally:
         cursor.close() 
         conn.close()
-
+"""
 if __name__ == "__main__":
-    app.run(port=5002)
+    app.run(port=5002, debug=True)
