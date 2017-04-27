@@ -46,7 +46,7 @@ def create_device(user, meid):
         mydb.add_data(entry, "INVENTORY", key_column="MEID")
         render_template('/checkMeid', user=user)    # go back to meid entry screen
 
-    return render_template('/createDevice', keys=keys)     # GET just shows the blanks
+    return render_template('/createDevice', keys=keys, meid=meid)     # GET just shows the blanks
 
 # show signup will require password data that only admins possess
 @app.route('/showSignUp', methods=['GET', 'POST'])
@@ -59,9 +59,14 @@ def showSignUp(badge):
         entry = {k:v for k, v in zip(keys, answers)}
         mydb.add_data(entry, "PEOPLE", key_column="BadgeID")
 
-    return render_template('/showSignUp', keys=keys)   # GET just shows the blanks
+    return render_template('/showSignUp', keys=keys, badge=badge)   # GET just shows the blanks
 
-# show
+@app.route('transferTo')
+def giveaway(user, meid):
+    
+@app.route('/receiveFrom')
+def takefrom(user, meid):
+
 """
 @app.route('/signUp',methods=['POST','GET'])
 def signUp():
