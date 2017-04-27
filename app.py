@@ -4,7 +4,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 mydb = makedb.dvtc_db
 app = Flask(__name__)
 
-
 # starting place. Asks for badge, finds a user from db or sends them to /showSignUp
 @app.route('/', methods=['GET', 'POST'])
 def main():
@@ -63,7 +62,7 @@ def showSignUp(badge):
 
 @app.route('transferTo')
 def giveaway(user, meid):
-    
+
 @app.route('/receiveFrom')
 def takefrom(user, meid):
 
