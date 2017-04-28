@@ -1,4 +1,14 @@
+''' some help with wtforms and flask-wtf:   
+https://www.youtube.com/watch?v=eu0tg4vgFr4
+
+Build a User Login System With Flask-Login, Flask-WTForms, Flask-Bootstrap, and Flask-SQLAlchemy:  
+https://www.youtube.com/watch?v=8aTnmsDMldY
+
+
+'''
+
 from flask import Flask, render_template, json, request
+from flask_wtf import FlaskForm
 import makedb
 from werkzeug.security import generate_password_hash, check_password_hash
 mydb = makedb.dvtc_db
@@ -51,7 +61,7 @@ def create_device(user, meid):
 @app.route('/showSignUp', methods=['GET', 'POST'])
 def showSignUp(badge):
     keys = [k for k in mydb.show_columns("PEOPLE") if k is not "BadgeID"]
-    if request.method == 'POST'
+    if request.method == 'POST':
         answers = [request.form[a] for a in keys]   # this assumes the keys can be generated in the form
         answers.append(badge)
         keys.append("BadgeID")
@@ -60,12 +70,13 @@ def showSignUp(badge):
 
     return render_template('/showSignUp', keys=keys, badge=badge)   # GET just shows the blanks
 
-@app.route('transferTo')
+@app.route('/transferTo')
 def giveaway(user, meid):
+    pass
 
 @app.route('/receiveFrom')
 def takefrom(user, meid):
-
+    pass
 """
 @app.route('/signUp',methods=['POST','GET'])
 def signUp():
