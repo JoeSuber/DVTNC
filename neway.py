@@ -4,7 +4,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Numeric, String
 
-
 inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
                      "OEM":"TEXT",
                      "SKU":"TEXT",
@@ -22,7 +21,6 @@ inventory_columns = {"MEID":"INTEGER PRIMARY KEY",
                      }
 
 
-
 people_columns = {"BadgeID":"INTEGER PRIMARY KEY",
                   "Name":"TEXT",
                   "Department":"TEXT"}
@@ -35,14 +33,14 @@ __sqlext__ = '.sqlite'
 __sql_inventory_fn__ = os.getcwd() + os.sep + __dbfn__ + __sqlext__
 __sqlfiles__ = [__sql_inventory_fn__]
 
-engine = create_engine('sqlite:///'+__sql_inventory_fn__)
+engine = create_engine('sqlite:///'+__sql_inventory_fn__, echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 Base = declarative_base()
 
 class Person(Base):
     __tablename__ = "people"
-    badge_id = Column(Integer(), primary_key=True)
+    badge_id = Column(Integer, primary_key=True)
     name = Column(String(55), index=True)
     department = Column(String(30))
 
@@ -75,15 +73,26 @@ device42 = Phone(MEID = '99000751003652',
                TesterName = "Joe Schmo",
                DVT_Admin = "Ivana Hugenkiss",
                Serial_Number = "1234567",
-               MSLPC = "")
+               MSLPC = "",
+                Comment = "I am the very model")
 
 realperson = Person(badge_id = 1234,
                 name = 'Joe Schmo',
                 department = 'Gnomes of Zurich')
 
+session.begin(device42)
+session.begin(realperson)
 session.add(realperson)
 session.add(device42)
-session.commit()
+
+# stuff = session.query(Phone).all()
+
+session.query(device42.MEID)
+
+print(session.query(device42.MEID))
+
+# print(stuff)
+
 
 
 
