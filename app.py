@@ -5,9 +5,9 @@ Build a User Login System With Flask-Login, Flask-WTForms, Flask-Bootstrap, and 
 https://www.youtube.com/watch?v=8aTnmsDMldY
 '''
 
-from flask import Flask, render_template, json, request
+from flask import Flask, render_template, json, request, url_for, redirect
 from flask_wtf import FlaskForm
-from wtforms import StringField
+from wtforms import StringField, IntegerField, TextAreaField, SubmitField, RadioField, SelectField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -19,7 +19,9 @@ __sql_inventory_fn__ = os.getcwd() + os.sep + __dbfn__ + __sqlext__
 print("Database file located at: {}".format(__sql_inventory_fn__))
 
 app = Flask(__name__)
+app.secret_key = 'development key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'+__sql_inventory_fn__
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 class Person(db.Model):
@@ -62,22 +64,47 @@ class Phone(db.Model):
 
 db.create_all()
 
+###### Flask Forms ########
+class BadgeForm(FlaskForm):
+    badge_id = StringField("Badge Barcode",[DataRequired("Please enter your Badge code.")])
+    #submit = SubmitField("Submit")
+
+class PersonForm(FlaskForm):
+    badge_id = StringField("Badge Barcode",[DataRequired("Required badge barcode ID")])
+    name = StringField("Your Name", [DataRequired("Your real name")])
+    department = StringField("Department", [DataRequired("Your division or job area")])
+
+class DeviceForm(FlaskForm):
+    MEID = IntegerField("MEID barcode", [DataRequired("Required device ID")])
+    OEM = StringField("OEM")
+    SKU = StringField("SKU")
+    IMEI = StringField("IMEI")
+    MODEL = StringField("MODEL")
+    Hardware_Type = StringField("Hardware Type")
+    In_Date = StringField("In Date")
+    Out_Date = StringField("Out Date")
+    Archived = StringField("Archived")
+    TesterName = StringField("Tester Name")
+    DVT_Admin = StringField("DVT Admin")
+    Serial_Number = StringField("Serial Number")
+    MSLPC = StringField("MSLPC")
+    Comment = StringField("Comment")
+#######   end Forms  ##############
+
 # starting place. Asks for badge, finds a user from db or sends them to /showSignUp
 @app.route('/', methods=['GET', 'POST'])
 def main():
+    _badge = BadgeForm()
     if request.method == 'POST':
-        _badge = request.form['inputBadge']
-        user = Person.query.filter_by(badge_id=_badge).first()
-        print("user = {}".format(user))
-        if not user:    # badge isn't in the database
-            return render_template('/showSignUp', badge=_badge)
-        else:   # user exists
-            return render_template('/checkMEID', user=user)
-
-    return render_template('index.html')
+        existing = Person.query.filter_by(badge_id=_badge.data['badge_id'])
+        if not existing:  # badge isn't in the database
+            return render_template(url_for('create_device'), badge=_badge)
+        else:           # user exists, continue on to device entry screen
+            return render_template(url_for('checkmeid'), user=_badge)
+    return render_template('idx.html', form=_badge)     # 'GET'
 
 # gets a user, collects an MEID, querry db to see if user owns MEID, calls giveaway() or takein()
-@app.route('/checkMEID', methods=['GET', 'POST'])
+@app.route('/checkMEID.html', methods=['GET', 'POST'])
 def checkmeid(user):
     if request.method == 'POST':
         _meid = request.form['inputMEID']
@@ -92,10 +119,11 @@ def checkmeid(user):
 
     return render_template('/checkMEID')
 
+
 # present and update the columns required to add a device to inventory
 @app.route('/createDevice', methods=['GET', 'POST'])
 def create_device(user, meid):
-    keys = [k for k in mydb.show_columns("INVENTORY") if k is not "MEID"]
+
     if request.method == 'POST':
         answers = [request.form[a] for a in keys]   # this assumes the keys can be generated in the form
         answers.append(meid)
@@ -109,15 +137,10 @@ def create_device(user, meid):
 # show signup will require password data that only admins possess
 @app.route('/showSignUp', methods=['GET', 'POST'])
 def showSignUp(badge):
-    keys = [k for k in mydb.show_columns("PEOPLE") if k is not "BadgeID"]
     if request.method == 'POST':
-        answers = [request.form[a] for a in keys]   # this assumes the keys can be generated in the form
-        answers.append(badge)
-        keys.append("BadgeID")
-        entry = {k:v for k, v in zip(keys, answers)}
-        mydb.add_data(entry, "PEOPLE", key_column="BadgeID")
+        pass
 
-    return render_template('/showSignUp', keys=keys, badge=badge)   # GET just shows the blanks
+    return render_template('/showSignUp.html')   # GET just shows the blanks
 
 @app.route('/transferTo')
 def giveaway(user, meid):
@@ -155,6 +178,26 @@ def signUp():
     finally:
         cursor.close() 
         conn.close()
+
+
+device42 = Phone(MEID = '99000751003652',
+               OEM = 'Motorolla',
+               SKU = 'Moto',
+               IMEI = '990007510036524',
+               MODEL = 'SUX-9000',
+               Hardware_Type = "Phone",
+               In_Date = "September 11, 2001",
+               Out_Date = "12/12/12",
+               Archived = "",
+               TesterName = "Joe Schmo",
+               DVT_Admin = "Ivana Hugenkiss",
+               Serial_Number = "1234567",
+               MSLPC = "",
+                Comment = "I am the very model")
+
+realperson = Person(badge_id = 1234,
+                name = 'Joe Schmo',
+                department = 'Gnomes of Zurich')
 """
 if __name__ == "__main__":
     app.run(port=5002, debug=True)

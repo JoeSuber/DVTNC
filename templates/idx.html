@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <head>
+    <title>DVT&C Inventory App</title>
+    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
+    <link href="../static/css/signup.css" rel="stylesheet">
+    <script src="../static/js/jquery-1.11.2.js"></script>
+    <script src="../static/js/signUp.js"></script>
+  </head>
+</head>
+<body>
+<h1> Badge Login </h1>
+
+<form method="POST" action="/">
+    {{ form.csrf_token }}
+    {{ form.badge_id.label }} {{ form.badge_id(size=20) }}
+    <input type="submit" value="Go">
+</form>
+
+</body>
+</html>
