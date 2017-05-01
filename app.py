@@ -3,23 +3,72 @@ https://www.youtube.com/watch?v=eu0tg4vgFr4
 
 Build a User Login System With Flask-Login, Flask-WTForms, Flask-Bootstrap, and Flask-SQLAlchemy:  
 https://www.youtube.com/watch?v=8aTnmsDMldY
-
-
 '''
 
 from flask import Flask, render_template, json, request
 from flask_wtf import FlaskForm
-import makedb
+from wtforms import StringField
+from wtforms.validators import DataRequired
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-mydb = makedb.dvtc_db
+import os
+
+__dbfn__ = "DVTCinventory"
+__sqlext__ = '.sqlite'
+__sql_inventory_fn__ = os.getcwd() + os.sep + __dbfn__ + __sqlext__
+print("Database file located at: {}".format(__sql_inventory_fn__))
+
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'+__sql_inventory_fn__
+db = SQLAlchemy(app)
+
+class Person(db.Model):
+    __tablename__ = "people"
+    badge_id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(55), index=True)
+    department = db.Column(db.String(30))
+
+    def __init__(self, badge, name, dept):
+        self.badge_id = badge
+        self.name = name
+        self.department = dept
+
+    def __repr__(self):
+        print("<Person %r>" % self.badge_id)
+
+class Phone(db.Model):
+    """  will add relations to Person http://flask-sqlalchemy.pocoo.org/2.1/quickstart/"""
+    __tablename__ = "devices"
+    MEID = db.Column(db.String(28), primary_key=True)
+    OEM = db.Column(db.String(50))
+    SKU = db.Column(db.String(50))
+    IMEI = db.Column(db.String(50))
+    MODEL = db.Column(db.String(50))
+    Hardware_Type = db.Column(db.String(50))
+    In_Date = db.Column(db.String(50))
+    Out_Date = db.Column(db.String(50))
+    Archived = db.Column(db.String(50))
+    TesterName = db.Column(db.String(50))
+    DVT_Admin = db.Column(db.String(50))
+    Serial_Number = db.Column(db.String(50))
+    MSLPC = db.Column(db.String(50))
+    Comment = db.Column(db.String(255))
+
+    def __init__(self, meid):
+        self.meid = meid
+
+    def __repr__(self):
+        print("<Phone %r" % self.meid)
+
+db.create_all()
 
 # starting place. Asks for badge, finds a user from db or sends them to /showSignUp
 @app.route('/', methods=['GET', 'POST'])
 def main():
     if request.method == 'POST':
         _badge = request.form['inputBadge']
-        user = mydb.find_person(_badge)
+        user = Person.query.filter_by(badge_id=_badge).first()
+        print("user = {}".format(user))
         if not user:    # badge isn't in the database
             return render_template('/showSignUp', badge=_badge)
         else:   # user exists
