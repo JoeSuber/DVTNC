@@ -26,9 +26,10 @@
 
       <div class="jumbotron">
           <form method="POST">
+              <p>
             <h1>scan badge, hit enter</h1>
             {{ form.hidden_tag() }}
-          <p>
+              {{ form }}
               {% for option in form.answer %}
               {{ option }}  {{ option.label }}<br>
               {% endfor %}

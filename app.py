@@ -7,7 +7,7 @@ https://www.youtube.com/watch?v=8aTnmsDMldY
 
 from flask import Flask, render_template, json, request, url_for, redirect
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, TextAreaField, SubmitField, RadioField, SelectField
+from wtforms.fields import StringField, IntegerField, TextAreaField, SubmitField, RadioField, SelectField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -66,13 +66,14 @@ db.create_all()
 
 ###### Flask Forms ########
 class BadgeForm(FlaskForm):
-    badge_id = StringField("Badge Barcode",[DataRequired("Please enter your Badge code.")])
-    #submit = SubmitField("Submit")
+    badge_id = StringField("Soopa",[DataRequired("Please enter your Badge code.")])
+    submit = SubmitField("Submit")
 
 class PersonForm(FlaskForm):
     badge_id = StringField("Badge Barcode",[DataRequired("Required badge barcode ID")])
     name = StringField("Your Name", [DataRequired("Your real name")])
     department = StringField("Department", [DataRequired("Your division or job area")])
+    submit = SubmitField("Submit or die")
 
 class DeviceForm(FlaskForm):
     MEID = IntegerField("MEID barcode", [DataRequired("Required device ID")])
@@ -94,7 +95,7 @@ class MeidForm(FlaskForm):
     meid = IntegerField("MEID barcode", [DataRequired("Please input an existing device")])
 
 class TargetPerson(FlaskForm):
-    badge_id = StringField("Badge Barcode",[DataRequired("Required badge barcode ID")])
+    badge_id = StringField("hoobajooba",[DataRequired("Required badge barcode ID")])
 
 #######   end Forms  ##############
 
@@ -102,7 +103,7 @@ class TargetPerson(FlaskForm):
 @app.route('/', methods=['GET', 'POST'])
 def main():
     _badge = BadgeForm()
-    if _badge.validate_on_submit():
+    if request.method == 'POST' and _badge.validate():
         existing = Person.query.filter_by(badge_id=_badge.data['badge_id'])
         if not existing:  # badge isn't in the database
             return render_template(url_for('create_person'), badge=_badge.data['badge_id'])
@@ -114,8 +115,10 @@ def main():
 @app.route('/create_persion.html', methods=['GET', 'POST'])
 def create_person(badge=None):
     person = PersonForm()   #todo figure out how to pass in badge and show it on POST
+    print(person.is_submitted())
     if request.method == 'POST':
-        pass
+        #todo: add person form to db
+        redirect(url_for('main'))
     return render_template('/create_person.html', form=person)
 
 # gets a user, collects an MEID, querry db to see if user owns MEID, calls giveaway() or takein()
@@ -169,6 +172,7 @@ def takefrom(user, meid):
 
 @app.route('/success.html')
 def success(use, meid, target):
+    pass
 
 """
 @app.route('/signUp',methods=['POST','GET'])
