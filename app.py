@@ -9,6 +9,7 @@ from flask import Flask, render_template, json, request, url_for, redirect
 from flask_wtf import FlaskForm
 from wtforms.fields import StringField, IntegerField, TextAreaField, SubmitField, RadioField, SelectField
 from wtforms.validators import DataRequired
+from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
@@ -66,8 +67,7 @@ db.create_all()
 
 ###### Flask Forms ########
 class BadgeForm(FlaskForm):
-    badge_id = StringField("Soopa",[DataRequired("Please enter your Badge code.")])
-    submit = SubmitField("Submit")
+    badge_id = StringField("Badge ID",[DataRequired("Please enter your Badge code.")])
 
 class PersonForm(FlaskForm):
     badge_id = StringField("Badge Barcode",[DataRequired("Required badge barcode ID")])
@@ -115,10 +115,9 @@ def main():
 @app.route('/create_persion.html', methods=['GET', 'POST'])
 def create_person(badge=None):
     person = PersonForm()   #todo figure out how to pass in badge and show it on POST
-    print(person.is_submitted())
     if request.method == 'POST':
         #todo: add person form to db
-        redirect(url_for('main'))
+        redirect(url_for('checkmeid'))
     return render_template('/create_person.html', form=person)
 
 # gets a user, collects an MEID, querry db to see if user owns MEID, calls giveaway() or takein()
@@ -156,7 +155,7 @@ def swap(current_owner, device, target_owner):
 # ask for the destination Person and transfer device
 @app.route('/giveaway.html')
 def giveaway(user, meid):
-    target = TargetPerson()
+    target = TargetPerson(request.form)
     if request.method == 'POST':
         redirect(url_for('success'), user, meid, target)
         swap(user, meid, target)

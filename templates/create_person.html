@@ -25,13 +25,21 @@
       </div>
 
       <div class="jumbotron">
-        <h1>scan new user badge</h1>
+        <h1>New Person</h1>
           <form method="POST">
             {{ form.hidden_tag() }}
           <p>
-              {% for option in form.answer %}
-              {{ option }}  {{ option.label }}<br>
-              {% endfor %}
+            {% for field in form %}
+            <tr>
+            {% if field.type == "BooleanField" %}
+            <td></td>
+            <td>{{ field }} {{ field.label }}</td>
+            {% else %}
+            <td>{{ field.label }}</td>
+            <td>{{ field }}</td>
+            {% end %}
+    </tr>
+{% endfor %}
           </p>
         {{ form.submit }}
         </form>
