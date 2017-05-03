@@ -59,12 +59,6 @@ class Phone(db.Model):
     MSLPC = db.Column(db.String(50))
     Comment = db.Column(db.String(255))
 
-    def __init__(self, meid):
-        self.meid = meid
-
-    def __repr__(self):
-        print("<Phone %r" % self.meid)
-
 db.create_all()
 
 ###### Flask Forms ########
@@ -72,10 +66,10 @@ class BadgeForm(FlaskForm):
     badge_id = StringField("Badge ID",[DataRequired("Please enter your Badge code.")])
 
 class PersonForm(FlaskForm):
-    badge_id = StringField("Badge Barcode",[DataRequired("Required badge barcode ID")])
+    badge_id = IntegerField("Badge Barcode",[DataRequired("Required badge barcode ID")])
     name = StringField("Your Name", [DataRequired("Your real name")])
     department = StringField("Department", [DataRequired("Your division or job area")])
-    submit = SubmitField("Submit or die")
+    submit = SubmitField("Enter")
 
 class DeviceForm(FlaskForm):
     MEID = IntegerField("MEID barcode", [DataRequired("Required device ID")])
@@ -104,53 +98,70 @@ class TargetPerson(FlaskForm):
 # starting place. Asks for badge, finds a user from db or sends them to /showSignUp
 @app.route('/', methods=['GET', 'POST'])
 def main():
-    _badge = BadgeForm()
-    if request.method == 'POST' and _badge.validate():
-        existing = Person.query.filter_by(badge_id=_badge.data['badge_id'])
+    badge = BadgeForm()
+    if request.method == 'POST' and badge.validate():
+        existing = Person.query.filter_by(badge_id=badge.badge_id.data).first()
         if not existing:  # badge isn't in the database
-            return render_template(url_for('create_person'), badge=_badge.data['badge_id'])
+            return create_person(badge=badge)   #render_template(url_for('create_person'), badge=badge.badge_id)
         else:           # user exists, continue on to device entry screen
-            return render_template(url_for('checkmeid'), user=_badge)
-    return render_template('idx.html', form=_badge)     # 'GET'
+            return checkmeid(user=badge)    #render_template(url_for('checkmeid'), user=badge)
+    return render_template('idx.html', form=badge)     # 'GET'
 
 # add a person to Persons table
-@app.route('/create_persion.html', methods=['GET', 'POST'])
+@app.route('/create_person.html', methods=['GET', 'POST'])
 def create_person(badge=None):
-    person = PersonForm()   #todo figure out how to pass in badge and show it on POST
-    if request.method == 'POST':
-        p_data = Person(badge_id=person.badge_id, name=person.name, department=person.department)
+    person = PersonForm(badge=badge)
+    if request.method == 'POST' and person.validate():
+        p_data = Person(badge_id=person.badge_id.data, name=person.name.data, department=person.department.data)
         db.session.add(p_data)
-        # commit?
-        redirect(url_for('checkmeid'))
+        db.session.commit()
+        return checkmeid(user=person)
+
     return render_template('/create_person.html', form=person)
 
 # gets a user, collects an MEID, querry db to see if user owns MEID, calls giveaway() or takein()
 @app.route('/checkMEID.html', methods=['GET', 'POST'])
-def checkmeid(user=None):
+def checkmeid(user=None, meid=None):
     if user is None:
         raise Exception("checkmeid must have a 'user' form")
-    _meid = MeidForm()
-    if request.method == 'POST':
-        device = Phone.query.filter_by(MEID=_meid.data['meid'])
+    _meid = MeidForm(meid=meid)
+    if request.method == 'POST' and _meid.validate():
+        device = Phone.query.filter_by(MEID=_meid.meid.data).first()
         if not device:
-            return redirect(url_for('create_device', user=user, meid=_meid))
+            return create_device(user=user, meid=_meid)
         else: # device exists
-            if Phone.query.filter_by(MEID=_meid.data['TesterName']) == user.data['name']:
-                return redirect(url_for('giveaway'), user=user, meid=_meid)
+            if device.TesterName.data == user.name.data:
+                return giveaway(user=user, meid=_meid)  #redirect(url_for('giveaway'), user=user, meid=_meid)
             else:
-                return redirect(url_for('takefrom'), user=user, meid=_meid)
+                return takefrom(user=user, meid=_meid)  #redirect(url_for('takefrom'), user=user, meid=_meid)
 
     return render_template('/checkMEID.html', form=_meid)
 
 # add a device to inventory
 @app.route('/createDevice.html', methods=['GET', 'POST'])
 def create_device(user=None, meid=None):
-    device = DeviceForm()
-    if request.method == 'POST':
-        pass    # send form contents to db
-        redirect(url_for('checkmeid'), user = user)  # go back to meid entry screen
+    df = DeviceForm()
+    if request.method == 'POST' and df.validate():
+        device_data = Phone(MEID=df.MEID.data,
+                            OEM=df.OEM.data,
+                            SKU=df.SKU.data,
+                            IMEI=df.IMEI.data,
+                            MODEL=df.MODEL.data,
+                            Hardware_Type=df.Hardware_Type.data,
+                            In_Date=df.In_Date.data,
+                            Out_Date=df.Out_Date.data,
+                            Archived=df.Archived.data,
+                            TesterName=df.TesterName.data,
+                            DVT_Admin=df.DVT_Admin.data,
+                            Serial_Number=df.Serial_Number.data,
+                            MSLPC=df.MSLPC.data,
+                            Comment=df.Comment.data)
+        db.session.add(device_data)
+        db.session.commit()
 
-    return render_template('/createDevice.html', form=device)
+        return checkmeid(user = user)  # go back to meid entry screen
+
+    return render_template('/createDevice.html', form=df)
 
 def swap(current_owner, device, target_owner):
     return True

@@ -15,9 +15,9 @@
       <div class="header">
         <nav>
           <ul class="nav nav-pills pull-right">
-            <li role="presentation" ><a href="showHome">Home</a></li>
-            <li role="presentation"><a href="active">Sign In</a></li>
-            <li role="presentation" class="active"><a href="#">Sign Up</a></li>
+            <li role="presentation" ><a href="/checkMEID.html">Home</a></li>
+            <li role="presentation"><a href="/idx.html">Badge In</a></li>
+            <li role="presentation" class="active"><a href="/create_person.html">New User</a></li>
           </ul>
         </nav>
         <h3 class="text-muted">device MEID</h3>
@@ -28,7 +28,7 @@
           {% from "_formhelpers.html" import render_field %}
           <form method="POST">
               <p>
-            <h1>Badge</h1>
+            <h1>MEID entry</h1>
             {{ form.hidden_tag() }}
               <p>
               {{ render_field(form.meid) }}
