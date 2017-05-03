@@ -30,14 +30,16 @@ class Person(db.Model):
     badge_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(55), index=True)
     department = db.Column(db.String(30))
-
+"""
     def __init__(self, badge, name, dept):
         self.badge_id = badge
         self.name = name
         self.department = dept
-
+        
     def __repr__(self):
         print("<Person %r>" % self.badge_id)
+"""
+
 
 class Phone(db.Model):
     """  will add relations to Person http://flask-sqlalchemy.pocoo.org/2.1/quickstart/"""
@@ -116,7 +118,9 @@ def main():
 def create_person(badge=None):
     person = PersonForm()   #todo figure out how to pass in badge and show it on POST
     if request.method == 'POST':
-        #todo: add person form to db
+        p_data = Person(badge_id=person.badge_id, name=person.name, department=person.department)
+        db.session.add(p_data)
+        # commit?
         redirect(url_for('checkmeid'))
     return render_template('/create_person.html', form=person)
 
@@ -128,7 +132,6 @@ def checkmeid(user=None):
     _meid = MeidForm()
     if request.method == 'POST':
         device = Phone.query.filter_by(MEID=_meid.data['meid'])
-        print("device = {}".format(device))
         if not device:
             return redirect(url_for('create_device', user=user, meid=_meid))
         else: # device exists

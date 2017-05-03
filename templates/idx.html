@@ -30,16 +30,9 @@
               <p>
             <h1>Badge</h1>
             {{ form.hidden_tag() }}
-             {% for field in form %}
-                <tr>
-                {% if field.label != "CSRF Token" %}
-                <td>{{ render_field(field) }}</td>
-                {% endif %}
-                </tr>
-            {% endfor %}
-
-          </p>
-              {{ form.submit }}
+              <p>
+              {{ render_field(form.badge_id) }}
+              </p>
           </form>
 
       </div>
